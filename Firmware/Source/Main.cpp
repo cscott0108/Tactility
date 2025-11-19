@@ -1,7 +1,9 @@
 #include <Tactility/Tactility.h>
 
+
 #ifdef ESP_PLATFORM
 #include <tt_init.h>
+#include <nvs_flash.h>
 #endif
 
 // Each board project declares this variable
@@ -18,9 +20,15 @@ void app_main() {
         .hardware = &hardwareConfiguration
     };
 
-#ifdef ESP_PLATFORM
+    #ifdef ESP_PLATFORM
+    // Initialize NVS before any Preferences/NVS usage
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        nvs_flash_erase();
+        nvs_flash_init();
+    }
     tt_init_tactility_c(); // ELF bindings for side-loading on ESP32
-#endif
+    #endif
 
     tt::run(config);
 }

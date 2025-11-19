@@ -47,6 +47,8 @@
 #include <esp_random.h>
 #include <esp_sntp.h>
 #include <driver/usb_serial_jtag.h>
+#include <driver/i2c.h>
+#include <driver/gpio.h>
 #include <hal/usb_serial_jtag_ll.h>
 
 #include <lvgl.h>
@@ -141,6 +143,18 @@ const esp_elfsym main_symbols[] {
     ESP_ELFSYM_EXPORT(usb_serial_jtag_read_bytes),
     ESP_ELFSYM_EXPORT(usb_serial_jtag_write_bytes),
     ESP_ELFSYM_EXPORT(usb_serial_jtag_ll_txfifo_flush),
+    // driver/i2c.h
+    ESP_ELFSYM_EXPORT(i2c_cmd_link_create),
+    ESP_ELFSYM_EXPORT(i2c_cmd_link_delete),
+    ESP_ELFSYM_EXPORT(i2c_master_start),
+    ESP_ELFSYM_EXPORT(i2c_master_stop),
+    ESP_ELFSYM_EXPORT(i2c_master_write_byte),
+    ESP_ELFSYM_EXPORT(i2c_master_read_byte),
+    ESP_ELFSYM_EXPORT(i2c_master_cmd_begin),
+    // driver/gpio.h
+    ESP_ELFSYM_EXPORT(gpio_config),
+    ESP_ELFSYM_EXPORT(gpio_get_level),
+    ESP_ELFSYM_EXPORT(gpio_set_level),
     // cstring
     ESP_ELFSYM_EXPORT(strlen),
     ESP_ELFSYM_EXPORT(strcmp),

@@ -11,13 +11,13 @@ class UartRelay final : public App {
     });
     ConsoleView consoleView;
     View* activeView = nullptr;
-    
+
     void stopActiveView();
     void showConsoleView(std::unique_ptr<Uart> uart, bool usbRelay, bool sdLog);
     void showConnectView();
     void onDisconnect();
     static void onDisconnectPressed(lv_event_t* event);
-    
+
 public:
     void onShow(AppHandle context, lv_obj_t* parent) override;
     void onHide(AppHandle context) override;

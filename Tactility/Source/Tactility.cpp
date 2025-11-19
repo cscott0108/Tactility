@@ -45,6 +45,8 @@ namespace service {
     namespace loader { extern const ServiceManifest manifest; }
     namespace memorychecker { extern const ServiceManifest manifest; }
     namespace statusbar { extern const ServiceManifest manifest; }
+    namespace displayidle { extern const ServiceManifest manifest; }
+    namespace keyboardinit { extern const ServiceManifest manifest; }
 #if TT_FEATURE_SCREENSHOT_ENABLED
     namespace screenshot { extern const ServiceManifest manifest; }
 #endif
@@ -75,6 +77,7 @@ namespace app {
     namespace imageviewer { extern const AppManifest manifest; }
     namespace inputdialog { extern const AppManifest manifest; }
     namespace launcher { extern const AppManifest manifest; }
+    namespace keyboardsettings { extern const AppManifest manifest; }
     namespace localesettings { extern const AppManifest manifest; }
     namespace notes { extern const AppManifest manifest; }
     namespace power { extern const AppManifest manifest; }
@@ -116,6 +119,7 @@ static void registerInternalApps() {
     addAppManifest(app::imageviewer::manifest);
     addAppManifest(app::inputdialog::manifest);
     addAppManifest(app::launcher::manifest);
+    addAppManifest(app::keyboardsettings::manifest);
     addAppManifest(app::localesettings::manifest);
     addAppManifest(app::notes::manifest);
     addAppManifest(app::settings::manifest);
@@ -216,6 +220,8 @@ static void registerAndStartSecondaryServices() {
     addService(service::loader::manifest);
     addService(service::gui::manifest);
     addService(service::statusbar::manifest);
+    addService(service::displayidle::manifest);
+    addService(service::keyboardinit::manifest);
     addService(service::memorychecker::manifest);
 #if TT_FEATURE_SCREENSHOT_ENABLED
     addService(service::screenshot::manifest);
@@ -286,11 +292,15 @@ void run(const Configuration& config) {
     config_instance = &config;
 
 #ifdef ESP_PLATFORM
+    TT_LOG_I(TAG, "Heap before initEsp: %s", heap_caps_check_integrity_all(true) ? "OK" : "CORRUPTED");
     initEsp();
+    TT_LOG_I(TAG, "Heap after initEsp: %s", heap_caps_check_integrity_all(true) ? "OK" : "CORRUPTED");
 #endif
     file::setFindLockFunction(file::findLock);
     settings::initTimeZone();
+    TT_LOG_I(TAG, "Heap after initTimeZone: %s", heap_caps_check_integrity_all(true) ? "OK" : "CORRUPTED");
     hal::init(*config.hardware);
+    TT_LOG_I(TAG, "Heap after hal::init: %s", heap_caps_check_integrity_all(true) ? "OK" : "CORRUPTED");
     network::ntp::init();
 
     registerAndStartPrimaryServices();

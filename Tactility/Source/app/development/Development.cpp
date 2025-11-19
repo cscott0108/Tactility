@@ -1,6 +1,7 @@
 #ifdef ESP_PLATFORM
 
 #include <Tactility/app/AppManifest.h>
+#include <Tactility/app/alertdialog/AlertDialog.h>
 #include <Tactility/lvgl/Lvgl.h>
 #include <Tactility/lvgl/LvglSync.h>
 #include <Tactility/lvgl/Style.h>
@@ -14,6 +15,7 @@
 
 #include <cstring>
 #include <lvgl.h>
+#include <esp_system.h>
 
 namespace tt::app::development {
 
@@ -24,8 +26,12 @@ class DevelopmentApp final : public App {
 
     lv_obj_t* enableSwitch = nullptr;
     lv_obj_t* enableOnBootSwitch = nullptr;
+    lv_obj_t* idleCheckSlider = nullptr;
+    lv_obj_t* idleCheckValueLabel = nullptr;
     lv_obj_t* statusLabel = nullptr;
     std::shared_ptr<service::development::DevelopmentService> service;
+    uint32_t originalIdleCheckInterval = 0;
+    LaunchId rebootDialogLaunchId = 0;
 
     Timer timer = Timer(Timer::Type::Periodic, [this] {
         auto lock = lvgl::getSyncLock()->asScopedLock();
@@ -63,6 +69,34 @@ class DevelopmentApp final : public App {
         }
     }
 
+    static void onIdleCheckSliderChanged(lv_event_t* event) {
+        lv_event_code_t code = lv_event_get_code(event);
+        auto* slider = static_cast<lv_obj_t*>(lv_event_get_target(event));
+        auto* app = static_cast<DevelopmentApp*>(lv_event_get_user_data(event));
+        
+        if (code == LV_EVENT_VALUE_CHANGED) {
+            int32_t value = lv_slider_get_value(slider);
+            lv_label_set_text_fmt(app->idleCheckValueLabel, "%ld seconds", value);
+        } else if (code == LV_EVENT_RELEASED) {
+            int32_t value = lv_slider_get_value(slider);
+            uint32_t newInterval = static_cast<uint32_t>(value);
+            
+            if (newInterval != app->originalIdleCheckInterval) {
+                // Save the setting
+                getMainDispatcher().dispatch([newInterval, app] {
+                    service::development::setIdleCheckIntervalSeconds(newInterval);
+                    
+                    // Show reboot dialog
+                    app->rebootDialogLaunchId = alertdialog::start(
+                        "Reboot Required",
+                        "Idle check interval changed. Reboot to apply the new setting.",
+                        std::vector<const char*>{"Reboot Now", "Later"}
+                    );
+                });
+            }
+        }
+    }
+
     void updateViewState() {
         if (!service->isEnabled()) {
             lv_label_set_text(statusLabel, "Service disabled");
@@ -87,6 +121,9 @@ public:
             TT_LOG_E(TAG, "Service not found");
             stop(manifest.appId);
         }
+        
+        // Store the original idle check interval
+        originalIdleCheckInterval = service::development::getIdleCheckIntervalSeconds();
     }
 
     void onShow(AppContext& app, lv_obj_t* parent) override {
@@ -134,6 +171,36 @@ public:
             lv_obj_remove_state(enableOnBootSwitch, LV_STATE_CHECKED);
         }
 
+        // Idle check interval slider
+
+        lv_obj_t* idle_check_wrapper = lv_obj_create(content_wrapper);
+        lv_obj_set_size(idle_check_wrapper, LV_PCT(100), LV_SIZE_CONTENT);
+        lvgl::obj_set_style_bg_invisible(idle_check_wrapper);
+        lv_obj_set_style_border_width(idle_check_wrapper, 0, LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_all(idle_check_wrapper, 4, LV_STATE_DEFAULT);
+        lv_obj_set_flex_flow(idle_check_wrapper, LV_FLEX_FLOW_COLUMN);
+
+        lv_obj_t* idle_check_label_wrapper = lv_obj_create(idle_check_wrapper);
+        lv_obj_set_size(idle_check_label_wrapper, LV_PCT(100), LV_SIZE_CONTENT);
+        lvgl::obj_set_style_bg_invisible(idle_check_label_wrapper);
+        lv_obj_set_style_border_width(idle_check_label_wrapper, 0, LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_all(idle_check_label_wrapper, 0, LV_STATE_DEFAULT);
+
+        lv_obj_t* idle_check_label = lv_label_create(idle_check_label_wrapper);
+        lv_label_set_text(idle_check_label, "Idle check interval");
+        lv_obj_align(idle_check_label, LV_ALIGN_LEFT_MID, 0, 0);
+
+        idleCheckValueLabel = lv_label_create(idle_check_label_wrapper);
+        lv_label_set_text_fmt(idleCheckValueLabel, "%lu seconds", originalIdleCheckInterval);
+        lv_obj_align(idleCheckValueLabel, LV_ALIGN_RIGHT_MID, 0, 0);
+
+        idleCheckSlider = lv_slider_create(idle_check_wrapper);
+        lv_obj_set_width(idleCheckSlider, LV_PCT(100));
+        lv_slider_set_range(idleCheckSlider, 1, 60); // 1 to 60 seconds
+        lv_slider_set_value(idleCheckSlider, originalIdleCheckInterval, LV_ANIM_OFF);
+        lv_obj_add_event_cb(idleCheckSlider, onIdleCheckSliderChanged, LV_EVENT_VALUE_CHANGED, this);
+        lv_obj_add_event_cb(idleCheckSlider, onIdleCheckSliderChanged, LV_EVENT_RELEASED, this);
+
         // Status
 
         statusLabel = lv_label_create(content_wrapper);
@@ -156,6 +223,21 @@ public:
         // Ensure that the update isn't already happening
         lock.lock();
         timer.stop();
+    }
+
+    void onResult(TT_UNUSED AppContext& appContext, LaunchId launchId, TT_UNUSED Result result, std::unique_ptr<Bundle> bundle) override {
+        if (launchId != rebootDialogLaunchId || result != Result::Ok || bundle == nullptr) {
+            return;
+        }
+
+        int32_t buttonIndex = alertdialog::getResultIndex(*bundle);
+        if (buttonIndex == 0) {
+            // User selected "Reboot Now"
+            esp_restart();
+        } else {
+            // User selected "Later" - update the original value so we don't keep prompting
+            originalIdleCheckInterval = service::development::getIdleCheckIntervalSeconds();
+        }
     }
 };
 

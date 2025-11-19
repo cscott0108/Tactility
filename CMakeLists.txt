@@ -66,6 +66,19 @@ endif ()
 
 project(Tactility)
 
+# Work around GCC 14.2.0 bug causing segfault when compiling esp_lcd RGB panel on Windows
+# Apply reduced optimization only to the problematic file (not used by T-Deck but compiled anyway)
+if (DEFINED ENV{ESP_IDF_VERSION} AND WIN32)
+    idf_build_get_property(build_dir BUILD_DIR)
+    set(RGB_PANEL_SOURCE "$ENV{IDF_PATH}/components/esp_lcd/rgb/esp_lcd_panel_rgb.c")
+    if (EXISTS "${RGB_PANEL_SOURCE}")
+        set_source_files_properties(
+            "${RGB_PANEL_SOURCE}"
+            PROPERTIES COMPILE_FLAGS "-O1 -fno-ipa-ra"
+        )
+    endif()
+endif()
+
 # Defined as regular project for PC and component for ESP
 if (NOT DEFINED ENV{ESP_IDF_VERSION})
     add_subdirectory(Tactility)

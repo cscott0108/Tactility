@@ -17,6 +17,16 @@ Stock Tactility couldn't expose the ESP32-S3's bidirectional USB Serial JTAG int
 
 ![screenshot of UartRelay app](../../Documentation/pics/screenshot-UartRelay.png)
 
+## Hardware Requirements
+
+To use UartRelay for UART device monitoring (the primary purpose of this app), you'll need:
+
+- **JST-PH 2.0mm 4-pin connector** (also called HY2.0-4P)
+- Connects to the T-Deck's onboard UART port
+- Required for relaying data between external UART devices and USB
+
+**Note:** The USB Serial JTAG relay functionality works without additional hardware, but UART device monitoring requires the connector.
+
 ## Download & Install
 
 - Prebuilt (direct):

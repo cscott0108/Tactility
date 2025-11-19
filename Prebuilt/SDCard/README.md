@@ -8,6 +8,8 @@ This directory contains prebuilt apps for Tactility Enhanced, packaged in the ex
 
 **The flagship app that sparked this firmware fork.** UartRelay transforms your T-Deck into a professional serial debugging tool with bidirectional USB Serial JTAG relay, SD logging, and field-ready portability.
 
+**Hardware note:** To relay UART data from external devices, you'll need a JST-PH 2.0mm 4-pin connector (HY2.0-4P) to access the T-Deck's onboard UART port.
+
 ## Quick Install
 
 1. Insert your SD card into your computer

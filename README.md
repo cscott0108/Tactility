@@ -60,6 +60,7 @@ The LilyGO T-Deck is packed with features (WiFi, 4G, GPS, LoRa, trackball, backl
 - LilyGO T-Deck device
 - USB-C cable
 - SD card (recommended: 8GB+)
+- **For UartRelay:** JST-PH 2.0mm 4-pin connector (HY2.0-4P) to access the onboard UART port for device monitoring
 
 ### Quick Start
 

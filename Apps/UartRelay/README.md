@@ -32,7 +32,7 @@ Stock Tactility couldn't expose the ESP32-S3's bidirectional USB Serial JTAG int
 1. Open UartRelay on the T-Deck
 2. Select UART port and baud rate
 3. Toggle the relay to start forwarding between UART and USB Serial JTAG
-4. Optionally enable SD logging for session capture
+4. Optionally enable SD logging for session capture (only available when USB relay is off; USB terminals have built-in logging)
 5. Press stop to end the relay (cleanup is automatic)
 
 Tips:

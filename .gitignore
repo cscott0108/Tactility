@@ -22,3 +22,10 @@ dependencies.lock
 .gitpod.yml
 
 sdkconfig.board.*.dev
+
+# Temporary reference/vendor files for analysis (not committed)
+Reference/
+Vendor/
+ThirdParty/
+temp/
+*.local
